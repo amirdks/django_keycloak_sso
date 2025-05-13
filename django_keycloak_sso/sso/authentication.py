@@ -135,16 +135,18 @@ class CustomUser(CustomGetterObjectKlass):
 
     @property
     def username(self):
-        if hasattr(self.payload, 'username'):
-            return self.username
-        elif hasattr(self.payload, 'preferred_username'):
+        if 'username' in self.payload:
+            return self.payload['username']
+        elif 'preferred_username' in self.payload:
             return self.preferred_username
         return str(self.id)
 
     @property
     def first_name(self):
         if 'first_name' in self.payload:
-            return self.first_name
+            return self.payload['first_name']
+        elif 'firstName' in self.payload:
+            return self.firstName
         elif 'given_name' in self.payload:
             return self.given_name
         return ""
@@ -152,7 +154,9 @@ class CustomUser(CustomGetterObjectKlass):
     @property
     def last_name(self):
         if 'last_name' in self.payload:
-            return self.last_name
+            return self.payload['last_name']
+        elif 'lastName' in self.payload:
+            return self.lastName
         elif 'family_name' in self.payload:
             return self.family_name
         return ""
@@ -160,9 +164,14 @@ class CustomUser(CustomGetterObjectKlass):
     @property
     def full_name(self):
         if 'full_name' in self.payload:
-            return self.full_name
+            return self.payload['full_name']
         elif 'name' in self.payload:
             return self.name
+        else:
+            first_name = self.first_name
+            last_name = self.last_name
+            if first_name and last_name:
+                return f"{first_name} {last_name}"
         return ""
 
     @property

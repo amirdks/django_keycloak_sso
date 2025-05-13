@@ -1,9 +1,8 @@
-import hashlib
 from typing import Any
 
 from django.conf import settings
-from django.core.cache import cache
 
+from django_keycloak_sso.caching import SSOCacheControlKlass
 from django_keycloak_sso.keycloak import KeyCloakConfidentialClient
 
 
@@ -11,6 +10,7 @@ class CustomGetterObjectKlass:
     def __init__(self, payload: dict):
         self._payload = payload
         self.keycloak_klass = KeyCloakConfidentialClient()
+        self.sso_cache_klass = SSOCacheControlKlass()
 
     # def __getattr__(self, name):
     #     if name in self._payload:
@@ -26,18 +26,13 @@ class CustomGetterObjectKlass:
         return f"<CustomGetterObjectKlass()>"
 
     def _get_cache_key(self, cache_base_key: str):
-        cache_base_key = f"{cache_base_key}_{self.id}"
-        cache_key = hashlib.sha256(cache_base_key.encode()).hexdigest()
-        return cache_key
+        return self.sso_cache_klass.get_custom_class_cache_key(cache_base_key)
 
     def _get_cached_value(self, cache_base_key: str) -> Any:
-        cache_key = self._get_cache_key(cache_base_key)
-        data = cache.get(cache_key)
-        return data if data is not None else None
+        return self.sso_cache_klass.get_custom_class_cached_value(cache_base_key)
 
     def _set_cache_value(self, cache_base_key: str, value: Any, timeout: int = 3600) -> None:
-        cache_key = self._get_cache_key(cache_base_key)
-        cache.set(cache_key, value, timeout=timeout)
+        return self.sso_cache_klass.set_custom_class_cache_value(cache_base_key, value, timeout)
 
 
 default_sso_service_authorization_method = 'IP'

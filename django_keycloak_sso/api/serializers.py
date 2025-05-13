@@ -12,8 +12,11 @@ class GroupSerializer(serializers.Serializer):
     title = serializers.SerializerMethodField()
 
     def get_title(self, obj):
-        if obj and obj.get('name'):
-            return obj['name']
+        if hasattr(obj, 'name'):
+            return getattr(obj, 'name')
+        else:
+            if obj and obj.get('name'):
+                return obj['name']
         return None
 
 
@@ -28,11 +31,26 @@ class UserSerializer(serializers.Serializer):
     group_roles = serializers.ListField()
     group_list = serializers.SerializerMethodField()
 
-    def get_id(self, obj) -> str:
-        return obj.id if obj else None
+    def get_id(self, obj):
+        if hasattr(obj, 'id'):
+            return getattr(obj, 'id')
+        else:
+            if obj and obj.get('id'):
+                return obj['id']
+        return None
 
-    def get_groups(self, obj) -> str:
-        return obj.groups_parent if obj else None
+    def get_groups(self, obj):
+        if hasattr(obj, 'groups_parent'):
+            return getattr(obj, 'groups_parent')
+        else:
+            if obj and obj.get('groups_parent'):
+                return obj['groups_parent']
+        return None
 
-    def get_group_list(self, obj) -> list:
-        return obj.groups_dict_list if obj else None
+    def get_group_list(self, obj):
+        if hasattr(obj, 'groups_dict_list'):
+            return getattr(obj, 'groups_dict_list')
+        else:
+            if obj and obj.get('groups_dict_list'):
+                return obj['groups_dict_list']
+        return None

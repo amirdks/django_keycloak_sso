@@ -1,14 +1,18 @@
 import logging
-from typing import Type
+from datetime import timedelta
+from typing import Type, Optional
 from urllib.parse import urlencode
 
 import requests
-from django.db.models import TextChoices
+from django.db.models import TextChoices, Model, QuerySet
 from django.utils.translation import gettext_lazy as _
 from requests.exceptions import HTTPError
 
+from django_keycloak_sso.api.serializers import GroupSerializer, UserSerializer
+from django_keycloak_sso.caching import SSOCacheControlKlass
 from django_keycloak_sso.helpers import get_settings_value
 from django_keycloak_sso.keycloak import KeyCloakConfidentialClient
+from django_keycloak_sso.sso.authentication import CustomUser, CustomGroup
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +39,23 @@ class SSOKlass:
         LIST = "LIST", _("List")
         CUSTOM = "CUSTOM", _("Custom")
 
+    class SSOFieldTypeChoices(TextChoices):
+        GROUP = "GROUP", "GROUP"
+        USER = "USER", "USER"
+        ROLE = "ROLE", "ROLE"
+
+    sso_request_exceptions = (
+        SSOKlassException,
+        SSOKlassNotFoundException,
+        KeyCloakConfidentialClient.KeyCloakException,
+        KeyCloakConfidentialClient.KeyCloakNotFoundException
+    )
+
     def __init__(self):
         self.sso_url = get_settings_value('SSO_SERVICE_BASE_URL')
         self.sso_admin_url = f"{self.sso_url}/admin-panel/v1"
         self.keycloak_klass = KeyCloakConfidentialClient()
+        self.sso_cache_klass = SSOCacheControlKlass()
 
     @classmethod
     def validate_enums_value(cls, value: str, enums_class: Type[TextChoices]):
@@ -105,11 +122,11 @@ class SSOKlass:
             obj_pk = kwargs.get('pk', None)
             if not obj_pk:
                 raise self.SSOKlassException(_("Get detail of a object need object pk"))
-        if data_form == self.SSODataFormChoices.LIST:
-            ids_filtering_list = kwargs.get('ids_filtering_list', list())
-            if not ids_filtering_list:
-                return []
-            kwargs['ids_filtering_list'] = [value for value in ids_filtering_list if value is not None]
+        # if data_form == self.SSODataFormChoices.LIST:
+        #     ids_filtering_list = kwargs.get('ids_filtering_list', list())
+        #     if not ids_filtering_list:
+        #         return []
+        #     kwargs['ids_filtering_list'] = [value for value in ids_filtering_list if value is not None]
         get_data_method = getattr(self, f'get_{data_type.lower()}_{data_form.lower()}_data')
         if not get_data_method or not callable(get_data_method):
             raise self.SSOKlassException("Data get method for sso data is not valid")
@@ -129,7 +146,7 @@ class SSOKlass:
         try:
             res = self.get_sso_data(data_type, self.SSODataFormChoices.DETAIL, pk=obj_id)
             return True
-        except (self.SSOKlassNotFoundException, self.SSOKlassException) as e:
+        except self.sso_request_exceptions as e:
             return False
 
     def get_user_detail_data(self, pk, *args, **kwargs):
@@ -234,3 +251,65 @@ class SSOKlass:
             if data_.get('id') == obj_id:
                 return data_
         raise cls.SSOKlassNotFoundException(f"Group with ID {obj_id} not found.")
+
+    def get_sso_data_list(self, queryset: QuerySet | list, field_name: str, field_type: SSOFieldTypeChoices) -> list:
+        list_data = self.sso_cache_klass.get_cached_value(field_type=field_type)
+        if not list_data:
+            list_data = list()
+            if queryset and (isinstance(queryset, QuerySet) or isinstance(queryset, list)):
+                # list_ids = queryset.values_list(field_name, flat=True)
+                list_ids = []
+                if field_type == self.SSOFieldTypeChoices.GROUP:
+                    data_type = SSOKlass.SSODataTypeChoices.COMPANY_GROUP
+                elif field_type == self.SSOFieldTypeChoices.USER:
+                    data_type = SSOKlass.SSODataTypeChoices.USER
+                else:
+                    raise ValueError("field_type is not valid")
+                list_data = self.get_sso_data(
+                    data_type=data_type,
+                    data_form=SSOKlass.SSODataFormChoices.LIST,
+                    ids_filtering_list=list_ids,
+                )
+                self.sso_cache_klass.set_cache_value(
+                    field_type=field_type,
+                    value=list_data,
+                    timeout=timedelta(hours=1).seconds
+                )
+
+        return list_data
+
+    def get_serializer_field_data(
+            self,
+            field_name: str,
+            field_type: SSOFieldTypeChoices,
+            obj_: Model,
+            list_data: Optional[list] = None,
+            get_from_list: bool = False
+    ) -> dict | None:
+        has_error = False
+        data = None
+        if get_from_list:
+            try:
+                data = self.get_obj_by_id(list_data, getattr(obj_, field_name))
+            except SSOKlass.SSOKlassNotFoundException as e:
+                has_error = True
+        if not get_from_list or (get_from_list and has_error):
+            try:
+                data = getattr(obj_, f"{field_name}_data", None)
+                if data:
+                    data = data.payload
+                else:
+                    if field_type == self.SSOFieldTypeChoices.GROUP:
+                        data = self.get_company_group_detail_data(getattr(obj_, field_name))
+                    elif field_type == self.SSOFieldTypeChoices.USER:
+                        data = self.get_user_detail_data(getattr(obj_, field_name))
+                    else:
+                        raise ValueError("field_type is not valid")
+            except self.sso_request_exceptions as e:
+                print(e)
+        if data:
+            if field_type == self.SSOFieldTypeChoices.GROUP:
+                data = GroupSerializer(CustomGroup(payload=data)).data
+            elif field_type == self.SSOFieldTypeChoices.USER:
+                data = UserSerializer(CustomUser(payload=data, is_authenticated=False)).data
+        return data

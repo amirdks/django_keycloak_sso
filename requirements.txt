@@ -1,0 +1,9 @@
+Django==5.2.1
+requests==2.32.3
+setuptools==80.4.0
+build==1.2.2.post1
+djangorestframework==3.16.0
+python-jose==3.4.0
+drf-yasg==1.21.10
+drf-spectacular==0.28.0
+PyJWT==2.10.1
