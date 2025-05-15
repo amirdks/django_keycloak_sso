@@ -7,18 +7,19 @@ from django.db.models import TextChoices
 
 class SSOCacheControlKlass:
 
-    def get_custom_class_cache_key(self, cache_base_key: str):
-        cache_base_key = f"{cache_base_key}_{self.id}"
+    @staticmethod
+    def get_custom_class_cache_key(cache_base_key: str, custom_obj):
+        cache_base_key = f"{cache_base_key}_{custom_obj.id}"
         cache_key = hashlib.sha256(cache_base_key.encode()).hexdigest()
         return cache_key
 
-    def get_custom_class_cached_value(self, cache_base_key: str) -> Any:
-        cache_key = self.get_custom_class_cache_key(cache_base_key)
+    def get_custom_class_cached_value(self, cache_base_key: str, custom_obj) -> Any:
+        cache_key = self.get_custom_class_cache_key(cache_base_key, custom_obj)
         data = cache.get(cache_key)
         return data if data is not None else None
 
-    def set_custom_class_cache_value(self, cache_base_key: str, value: Any, timeout: int = 3600) -> None:
-        cache_key = self.get_custom_class_cache_key(cache_base_key)
+    def set_custom_class_cache_value(self, cache_base_key: str, value: Any, custom_obj, timeout: int = 3600) -> None:
+        cache_key = self.get_custom_class_cache_key(cache_base_key, custom_obj)
         cache.set(cache_key, value, timeout=timeout)
 
     @staticmethod

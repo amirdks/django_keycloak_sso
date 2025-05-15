@@ -26,13 +26,13 @@ class CustomGetterObjectKlass:
         return f"<CustomGetterObjectKlass()>"
 
     def _get_cache_key(self, cache_base_key: str):
-        return self.sso_cache_klass.get_custom_class_cache_key(cache_base_key)
+        return self.sso_cache_klass.get_custom_class_cache_key(cache_base_key, self)
 
     def _get_cached_value(self, cache_base_key: str) -> Any:
-        return self.sso_cache_klass.get_custom_class_cached_value(cache_base_key)
+        return self.sso_cache_klass.get_custom_class_cached_value(cache_base_key, self)
 
     def _set_cache_value(self, cache_base_key: str, value: Any, timeout: int = 3600) -> None:
-        return self.sso_cache_klass.set_custom_class_cache_value(cache_base_key, value, timeout)
+        return self.sso_cache_klass.set_custom_class_cache_value(cache_base_key, value, self, timeout)
 
 
 default_sso_service_authorization_method = 'IP'
