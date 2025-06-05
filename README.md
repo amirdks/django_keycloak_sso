@@ -24,14 +24,14 @@ KEYCLOAK_DEFAULT_ADMIN_PANEL_PERMISSION_CLASSES = [
 examples:
 
 ```python
-KEYCLOAK_SERVER_URL=https://sso.roshanjoo.ir # if using in dokcer : https://<keycloak_container>:8443
-KEYCLOAK_ISSUER_PREFIX=https://sso.roshanjoo.ir
-KEYCLOAK_REALM=markaz
-KEYCLOAK_CLIENT_ID=ticketing-back
+KEYCLOAK_SERVER_URL=https://sso.domain # if using in dokcer : https://<keycloak_container>:8443
+KEYCLOAK_ISSUER_PREFIX=https://sso.domain
+KEYCLOAK_REALM=main
+KEYCLOAK_CLIENT_ID=ecommerce-back
 KEYCLOAK_CLIENT_SECRET=<client_secret_key>
 KEYCLOAK_OAUTH_REDIRECT_URI=http://127.0.0.1:8000/auth/callback/ # for login in ssr sites
-KEYCLOAK_CLIENT_NAME=ticketing
-KEYCLOAK_CLIENT_TITLE=ticketing-back
+KEYCLOAK_CLIENT_NAME=ecommerce
+KEYCLOAK_CLIENT_TITLE=ecommerce-back
 KEYCLOAK_ALGORITHMS=RS256
 ```
 
@@ -144,7 +144,7 @@ from django_keycloak_sso.sso import fields as sso_fields
 from django_keycloak_sso.sso.meta import CustomMetaSSOModelSerializer, SSOModelMeta 
 
 
-class Server(AuditableModel, metaclass=SSOModelMeta):
+class Server(Model, metaclass=SSOModelMeta):
     user = sso_fields.SSOUserField(verbose_name=_("User"))
     group_id = sso_fields.SSOGroupField(verbose_name=_("Group"))
 
@@ -279,7 +279,3 @@ For get more facilities and features go deep on these classes :
 **Note:** To get most caching performance use REDIS as cache system (especially HiRedis)
 
 ---
-
-نکته : زیاد بود اینا دیگه توضیحاتش فقط بهشون اشاره کردم ولی خب بنظرم برای استفاده از پکیج همین امکاناتش کافی هستند
-
-بازم سوالی بود بنده در خدمتم :)
