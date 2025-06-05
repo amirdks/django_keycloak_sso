@@ -1,6 +1,6 @@
 [project]
 name = "django-keycloak-sso"
-version = "0.1.1"
+version = "0.1.2"
 description = "Reusable Django app for SSO integration"
 authors = [{name="Amir", email="amirhossein6168@gmail.com"}]
 readme = "README.md"

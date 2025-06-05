@@ -249,7 +249,7 @@ class KeyCloakConfidentialClient(KeyCloakBaseManager):
                 jwks,
                 algorithms=[self.algorithms],
                 audience=self.user_audience,
-                issuer=self.issuer
+                # issuer=self.issuer
             )
         except (jose_exceptions.JWTError, jose_exceptions.ExpiredSignatureError, jose_exceptions.JWTClaimsError) as e:
             raise self.KeyCloakException(f"Failed to decode token : {str(e)}")
