@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.urls]
-#Homepage = "https://your-git-host.com/django-sso-package"
+Homepage = "https://github.com/amirdks/django_keycloak_sso"
 
 [build-system]
 requires = [
