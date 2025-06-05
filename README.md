@@ -103,6 +103,85 @@ note : **KeycloakAuthentication** is enough for DRF backend services
 
 ---
 
+### Permission Decorators
+
+These decorators provide fine-grained access control for your views using Keycloak user attributes. They can be used on Django views, DRF APIViews, or function-based views. All decorators rely on the check_user_permission_access function internally.
+
+    All decorators are stackable — combine multiple for more specific permission control.
+
+#### Available Decorators
+
+```python
+from django_keycloak_sso.decorators import (
+    require_roles,
+    require_groups,
+    require_group_roles,
+    require_all_permissions
+)
+```
+
+**@require_roles(\*role_titles)**
+
+Checks if the user has all of the specified realm or client roles.
+```python
+@require_roles('superuser', 'admin')
+def view_func(request):
+    pass
+```
+
+**@require_groups(\*group_titles)**
+
+Checks if the user is a member of all specified group names.
+```python
+@require_groups('group_1')
+def view_func(request):
+    pass
+```
+
+**@require_group_roles(\*group_roles, match_group_roles=False)**
+
+Checks if the user has at least one of the specified roles within any group.
+Use **match_group_roles=True** to only allow matches where the group name is also explicitly listed via @require_groups.
+
+```python
+@require_group_roles('manager')  # Any group
+@require_group_roles('admin', match_group_roles=True)  # Must match both group and role
+def view_func(request):
+    pass
+```
+
+**@require_all_permissions(role_titles=[], group_titles=[], group_roles=[], match_group_roles=False)**
+
+Combined decorator that allows you to check all types of permissions in one call.
+
+```python
+@require_all_permissions(
+    role_titles=['superuser'],
+    group_titles=['group_1'],
+    group_roles=['manager'],
+    match_group_roles=True
+)
+def view_func(request):
+    pass
+```
+
+#### Stacking Decorators
+
+You can combine decorators for more control:
+
+```python
+@require_roles('superuser')
+@require_groups('group_1')
+@require_group_roles('manager')
+def view_func(request):
+    pass
+```
+
+    All decorators raise PermissionDenied (403) if access checks fail.
+    Make sure your view expects an authenticated user (request.user.is_authenticated is checked internally).
+
+---
+
 ### Permission Classes
 
 - IsManagerAccess

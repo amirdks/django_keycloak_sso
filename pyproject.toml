@@ -1,8 +1,8 @@
 [project]
 name = "django-keycloak-sso"
-version = "0.1.3"
+version = "0.2.0"
 description = "Reusable Django app for SSO integration"
-authors = [{name="Amir", email="amirhossein6168@gmail.com"}]
+authors = [{name="Amirhossein Daneshi Kohan", email="amirhossein6168@gmail.com"}]
 readme = "README.md"
 license = { file = "LICENSE" }
 
