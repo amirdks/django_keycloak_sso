@@ -55,6 +55,7 @@ class SSOModelMeta(models.base.ModelBase):
         return property(sso_property)
 
 
+# TODO : add functionality for m2m field
 class CustomMetaSSOModelSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
