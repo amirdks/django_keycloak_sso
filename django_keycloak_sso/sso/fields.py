@@ -321,3 +321,10 @@ class SSOManyGroupField(SSOManyBaseField):
         super().__init__(*args, **kwargs)
         self.field_type = 'group'
         self.manager_klass = SSOGroupManager
+
+# def clean(self):
+#     super().clean()
+#     if not self.pk:  # Need to save first
+#         return
+#     if not self.delivery_user_ids.get_user_ids():
+#         raise ValidationError({'delivery_user_ids': _("At least one delivery user is required.")})
