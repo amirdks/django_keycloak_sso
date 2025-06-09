@@ -19,6 +19,11 @@ class GroupSerializer(serializers.Serializer):
                 return obj['name']
         return None
 
+    def to_representation(self, instance):
+        if not instance.is_exists:
+            return dict()
+        return super().to_representation(instance)
+
 
 class UserSerializer(serializers.Serializer):
     id = serializers.SerializerMethodField()
@@ -54,3 +59,8 @@ class UserSerializer(serializers.Serializer):
             if obj and obj.get('groups_dict_list'):
                 return obj['groups_dict_list']
         return None
+
+    def to_representation(self, instance):
+        if not instance.is_exists:
+            return dict()
+        return super().to_representation(instance)

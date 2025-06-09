@@ -8,6 +8,7 @@ from django_keycloak_sso.keycloak import KeyCloakConfidentialClient
 
 class CustomGetterObjectKlass:
     def __init__(self, payload: dict):
+        self.is_exists = bool(payload)
         self._payload = payload
         self.keycloak_klass = KeyCloakConfidentialClient()
         self.sso_cache_klass = SSOCacheControlKlass()
@@ -18,9 +19,14 @@ class CustomGetterObjectKlass:
     #     raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     def __getattr__(self, name):
+        if not self.is_exists:
+            return None
         if name in self._payload:
             return self._payload[name]
         return super().__getattribute__(name)
+
+    def __bool__(self):
+        return self.is_exists
 
     def __repr__(self):
         return f"<CustomGetterObjectKlass()>"
