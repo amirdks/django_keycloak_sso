@@ -294,12 +294,13 @@ class SSOManyBaseField(models.Field):
             verbose_name = f"{self.name} relation"
             verbose_name_plural = f"{self.name} relations"
 
+        field_type = self.field_type
         attrs = {
             '__module__': self.model_class.__module__,
             'parent': models.ForeignKey(self.model_class, on_delete=models.CASCADE),
             f'{self.field_type}_id': models.CharField(max_length=36),
             'Meta': Meta,
-            '__str__': lambda self: f"{self.parent} - {getattr(self, f'{self.field_type}_id', None)}",
+            '__str__': lambda self: f"{self.parent} - {getattr(self, f'{field_type}_id', None)}",
         }
 
         self._relation_model = type(rel_model_name, (models.Model,), attrs)

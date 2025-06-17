@@ -307,9 +307,10 @@ class SSOKlass:
                         raise ValueError("field_type is not valid")
             except self.sso_request_exceptions as e:
                 print(e)
-        if data:
-            if field_type == self.SSOFieldTypeChoices.GROUP:
-                data = GroupSerializer(CustomGroup(payload=data)).data
-            elif field_type == self.SSOFieldTypeChoices.USER:
-                data = UserSerializer(CustomUser(payload=data, is_authenticated=False)).data
+        if not data:
+            return None
+        if field_type == self.SSOFieldTypeChoices.GROUP:
+            data = GroupSerializer(CustomGroup(payload=data)).data
+        elif field_type == self.SSOFieldTypeChoices.USER:
+            data = UserSerializer(CustomUser(payload=data, is_authenticated=False)).data
         return data
