@@ -162,6 +162,14 @@ class GroupListRetrieveView(BaseKeycloakAdminView):
             if request.query_params.get("own") == "1" and not pk:
                 user_group_names = [group for group in request.user.groups_parent]
                 response = [group for group in response if group.get("name") in user_group_names]
+                group_type = request.query_params.get("type")
+                if group_type:
+                    group_with_type = [
+                        user_group for user_group in request.user.groups_dict_list if
+                        user_group.get("role") == group_type
+                    ]
+                    group_with_type_name_list = [group.get("title") for group in group_with_type]
+                    response = [group for group in response if group.get("name") in group_with_type_name_list]
 
             paginator = self.pagination_class()
             paginated_queryset = paginator.paginate_queryset(response, request)
