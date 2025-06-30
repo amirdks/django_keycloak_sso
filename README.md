@@ -210,7 +210,11 @@ class TestView(APIView):
 
 - SSOUserField
 
-- SSOUserM2MField
+- SSOManyUserField
+
+- SSOManyGroupField
+
+- SSOManyField
   
   
   
@@ -226,8 +230,11 @@ from django_keycloak_sso.sso.meta import CustomMetaSSOModelSerializer, SSOModelM
 class Server(Model, metaclass=SSOModelMeta):
     user = sso_fields.SSOUserField(verbose_name=_("User"))
     group_id = sso_fields.SSOGroupField(verbose_name=_("Group"))
+    delivery_users = sso_fields.SSOManyUserField(verbose_name=_("Delivery Users")) # New Many-to-Many Field
 
 class ServerSerializer(CustomMetaSSOModelSerializer):
+  # is limited : get ids or full data of assigned instances
+  delivery_users = SSOManyField(source='delivery_users', field_type='user', is_limited=True) # New Many-to-Many Serializer Field
     class Meta:
         model = Server
         fields = (...)    
@@ -243,6 +250,10 @@ class ServerSerializer(CustomMetaSSOModelSerializer):
   mode_obj.fieldname_data # mock django relation fields behavior
   my_server.user_data # get a dict of user datas
   my_server.user_data.username # get a key from sso field data
+  my_server.delivery_users.get_ids # get ids of saved m2m instances
+  my_server.delivery_users.get_full_data # get full datas of saved m2m instances
+  my_server.delivery_users.add # add an instance to m2m field
+  my_server.delivery_users.remove # remove an instance to m2m field
   
   # NOTE : Do same with group fields
   ```
