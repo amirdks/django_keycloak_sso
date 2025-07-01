@@ -52,3 +52,24 @@ class IsSuperUserOrManagerAccess(IsAuthenticated):
         if access_status:
             return True
         raise PermissionDenied(_("You are not allowed to access this api"))
+
+class IsAuthenticatedAccess(IsAuthenticated):
+    """
+    Default permission class for authenticated users integrated with Keycloak.
+    Only allows access if user is authenticated and validated by check_user_permission_access.
+    """
+    def has_permission(self, request, view):
+        is_authenticated = super().has_permission(request, view)
+
+        access_status = is_authenticated and check_user_permission_access(
+            request.user,
+            role_titles=[],
+            group_titles=[],
+            group_roles=[],
+            raise_exception=False
+        )
+
+        if not access_status:
+            raise PermissionDenied(_("You are not allowed to access this API"))
+
+        return True
