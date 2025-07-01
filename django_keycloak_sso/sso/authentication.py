@@ -13,7 +13,7 @@ from .helpers import CustomGetterObjectKlass
 
 class CustomGroup(CustomGetterObjectKlass):
     def __repr__(self):
-        return f"<CustomGroup(id={self._payload['id'] if bool(self) else 'None'})>"
+        return f"<CustomGroup(id={self.id if bool(self) else 'None'})>"
 
     @property
     def get_user_ids(self):
@@ -40,7 +40,7 @@ class CustomUser(CustomGetterObjectKlass):
         self.is_authenticated = is_authenticated
 
     def __repr__(self):
-        return f"<CustomUser(id={self._payload['id'] if bool(self) else 'None'}, is_authenticated={self.is_authenticated})>"
+        return f"<CustomUser(id={self.id if bool(self) else 'None'}, is_authenticated={self.is_authenticated})>"
 
     # @property
     # def primary_group(self):

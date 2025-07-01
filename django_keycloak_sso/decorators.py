@@ -15,7 +15,7 @@ def check_permission_decorator(
 
     def decorator(view_func):
         @wraps(view_func)
-        def _wrapped_view(request, *args, **kwargs):
+        def _wrapped_view(view, request, *args, **kwargs):
             user = getattr(request, 'user', None)
             if not user or not user.is_authenticated:
                 raise PermissionDenied(_("Authentication required"))
@@ -32,7 +32,7 @@ def check_permission_decorator(
             if not has_access:
                 raise PermissionDenied(_("You are not allowed to access this API"))
 
-            return view_func(request, *args, **kwargs)
+            return view_func(view, request, *args, **kwargs)
 
         return _wrapped_view
 
