@@ -56,6 +56,7 @@ def require_any_role(*role_titles):
     """
     Decorator to check if user has at least one of the given roles (OR logic)
     """
+    role_titles = [r for r in role_titles if r]
 
     def decorator(view_func):
         @wraps(view_func)
@@ -65,7 +66,9 @@ def require_any_role(*role_titles):
                 raise PermissionDenied(_("Authentication required"))
 
             user_roles = set(getattr(user, 'roles', []) + getattr(user, 'client_roles', []))
-            if not any(role.lower() in [r.lower() for r in user_roles] for role in role_titles):
+            user_roles = [r.lower() for r in user_roles if r]
+
+            if not any(role.lower() in user_roles for role in role_titles):
                 raise PermissionDenied(_("You are not allowed to access this API"))
 
             return view_func(view, request, *args, **kwargs)

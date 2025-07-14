@@ -82,9 +82,9 @@ def check_user_permission_access(
         if not matched:
             denied_group_role = True
 
-    denied_required_role = denied_required_role if require_required_role else True
-    denied_group_title_role = denied_group_title_role if require_group_title_role else True
-    denied_group_role = denied_group_role if require_group_role else True
+    denied_required_role = denied_required_role if require_required_role else False
+    denied_group_title_role = denied_group_title_role if require_group_title_role else False
+    denied_group_role = denied_group_role if require_group_role else False
 
     if permissive:
         access_granted = not (denied_required_role and denied_group_title_role and denied_group_role)
