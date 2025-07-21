@@ -309,6 +309,8 @@ class SSOKlass:
                 print(e)
         if not data:
             return None
+        if isinstance(data, list):
+            data = data[0]
         if field_type == self.SSOFieldTypeChoices.GROUP:
             data = GroupSerializer(CustomGroup(payload=data)).data
         elif field_type == self.SSOFieldTypeChoices.USER:

@@ -15,6 +15,9 @@ class CustomGroup(CustomGetterObjectKlass):
     def __repr__(self):
         return f"<CustomGroup(id={self.id if bool(self) else 'None'})>"
 
+    def get(self, key, default=None):
+        return self._payload.get(key, default)
+
     @property
     def get_user_ids(self):
         """
@@ -41,6 +44,9 @@ class CustomUser(CustomGetterObjectKlass):
 
     def __repr__(self):
         return f"<CustomUser(id={self.id if bool(self) else 'None'}, is_authenticated={self.is_authenticated})>"
+
+    def get(self, key, default=None):
+        return self._payload.get(key, default)
 
     # @property
     # def primary_group(self):
