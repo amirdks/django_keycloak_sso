@@ -169,15 +169,21 @@ class CustomUser(CustomGetterObjectKlass):
 
     @property
     def full_name(self):
-        if 'full_name' in self.payload:
+        if 'full_name' in self.payload and self.payload['full_name']:
             return self.payload['full_name']
-        elif 'name' in self.payload:
+        elif 'name' in self.payload and self.payload['name']:
             return self.name
         else:
             first_name = self.first_name
             last_name = self.last_name
             if first_name and last_name:
                 return f"{first_name} {last_name}"
+            elif first_name:
+                return f"{first_name}"
+            elif last_name:
+                return f"{last_name}"
+            else:
+                return self.username
         return ""
 
     @property
