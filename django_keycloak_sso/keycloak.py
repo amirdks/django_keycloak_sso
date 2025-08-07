@@ -507,6 +507,32 @@ class KeyCloakConfidentialClient(KeyCloakBaseManager):
             raise self.KeyCloakException(_("Failed to retrieve user roles from Keycloak"))
 
         return response_data
+
+
+    # for create group
+    def _post_groups(self , name: str , group_parent_id: str = None):
+        endpoint = '/groups'
+
+        if group_parent_id:
+            endpoint = f'/groups/{group_parent_id}/children'
+
+        endpoint = self._build_filter_url(base_url=endpoint)
+        extra_headers = {
+            "Content-Type": "application/json"
+        }
+        data = {
+            'name': name
+        }
+        extra_headers = self.set_client_access_token(extra_headers)
+        response_data = self._get_request_data(
+            endpoint=endpoint,
+            request_method=self.KeyCloakRequestMethodChoices.POST,
+            extra_headers=extra_headers,
+            post_data=data,
+            is_admin=True
+        )
+        return response_data
+
     # def decode_token_v2(self, token):
     #     try:
     #         return self.keycloak_openid.decode_token(

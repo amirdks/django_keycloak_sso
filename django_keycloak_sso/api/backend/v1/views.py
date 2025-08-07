@@ -9,7 +9,7 @@ from django_keycloak_sso.documentation import keycloak_login_doc, keycloak_api_d
 from django_keycloak_sso.keycloak import KeyCloakConfidentialClient
 from django_keycloak_sso.paginations import DefaultPagination
 from django_keycloak_sso.sso.authentication import CustomUser
-from ...serializers import KeyCloakSetCookieSerializer
+from ...serializers import KeyCloakSetCookieSerializer,GroupCreateSerializer
 
 
 class KeyCloakLoginView(APIView):
@@ -356,3 +356,59 @@ class UserListRetrieveView(BaseKeycloakAdminView):
             return Response({"detail": "Requested user data was not found"}, status=404)
 
         return Response(response, status=200)
+
+
+class CreateGroupView(APIView):
+    serializer_class = GroupCreateSerializer
+
+    @keycloak_admin_doc(
+        operation_summary="Create group",
+        operation_description='Create a group. '
+                               'Optional: You can create a group '
+                              'in that subcategory by passing the group ID in the parameter',
+        responses={
+            200: {
+                'type': 'object',
+                'properties': {
+                    'detail': {'type': 'string'}
+                },
+                'example': {
+                    'detail': 'Created station groups successfully',
+                    'response': 'object'
+                }
+            }
+        },
+        parameters=[
+            {
+                'name': 'group_parent_id',
+                'in': 'query',
+                'description': 'Enter the group ID above of the branch.',
+                'required': False,
+                'schema': {'type': 'string'}
+            }
+        ]
+    )
+    def post(self, request, *args, **kwargs):
+        srz_data = self.serializer_class(data=request.data)
+        srz_data.is_valid(raise_exception=True)
+
+        group_parent_id = request.query_params.get('group_parent_id')
+
+        group_name = srz_data.validated_data['name']
+
+        keycloak = KeyCloakConfidentialClient()
+
+        try:
+            response = keycloak.send_request(
+                keycloak.KeyCloakRequestTypeChoices.GROUPS,
+                keycloak.KeyCloakRequestTypeChoices,
+                keycloak.KeyCloakRequestMethodChoices.POST,
+                keycloak.KeyCloakPanelTypeChoices.ADMIN,
+                name=group_name,
+                group_parent_id=group_parent_id
+            )
+            return Response({'detail':'Created station groups successfully',
+                             'response':response},status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)

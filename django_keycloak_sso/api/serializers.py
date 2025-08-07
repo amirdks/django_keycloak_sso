@@ -199,3 +199,7 @@ class SSOManyField(serializers.Field):
                 raise serializers.ValidationError(f"Invalid ID format: {item}")
 
         return data
+
+
+class GroupCreateSerializer(serializers.Serializer):
+    name = serializers.CharField()

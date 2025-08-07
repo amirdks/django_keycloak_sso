@@ -11,6 +11,7 @@ auth_urls = [
 sso_urls = [
     path('profile/', views.UserProfileRetrieveView.as_view(), name='user_profile_retrieve_view'),
     path('groups/', views.GroupListRetrieveView.as_view(), name='group_list_view'),
+    path('groups/create/',views.CreateGroupView.as_view(),name='group_create'),
     path('groups/<str:pk>/', views.GroupListRetrieveView.as_view(), name='group_retrieve_view'),
     path("users/", views.UserListRetrieveView.as_view(), name="user_retrieve_view"),
     path("users/<str:pk>/", views.UserListRetrieveView.as_view(), name="user_list_view"),
