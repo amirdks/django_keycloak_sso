@@ -203,3 +203,10 @@ class SSOManyField(serializers.Field):
 
 class GroupCreateSerializer(serializers.Serializer):
     name = serializers.CharField()
+
+class AssignRoleGroupSerializer(serializers.Serializer):
+    role_id = serializers.CharField()
+    role_name = serializers.CharField()
+
+class AssignRoleGroupManySerializer(serializers.Serializer):
+    roles = AssignRoleGroupSerializer(many=True)

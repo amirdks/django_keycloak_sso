@@ -9,7 +9,7 @@ from django_keycloak_sso.documentation import keycloak_login_doc, keycloak_api_d
 from django_keycloak_sso.keycloak import KeyCloakConfidentialClient
 from django_keycloak_sso.paginations import DefaultPagination
 from django_keycloak_sso.sso.authentication import CustomUser
-from ...serializers import KeyCloakSetCookieSerializer,GroupCreateSerializer
+from ...serializers import KeyCloakSetCookieSerializer,GroupCreateSerializer,AssignRoleGroupManySerializer
 
 
 class KeyCloakLoginView(APIView):
@@ -446,5 +446,49 @@ class RoleListRetrieveView(APIView):
                 role_id=role_id
             )
             return Response(response,status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class AssignRoleGroupView(APIView):
+    """
+    assigning roles to group
+    """
+    serializer_class = AssignRoleGroupManySerializer
+
+    @keycloak_admin_doc(
+        operation_summary="Assigning role to group",
+        operation_description="Assign a role to the desired group",
+        request_body = AssignRoleGroupManySerializer,
+        responses={
+            200: {
+                'type': 'object',
+                'properties': {
+                    'detail': {'type': 'string'}
+                },
+                'example': {
+                    'detail': 'Request successful.'
+                }
+            }
+        }
+    )
+    def post(self,request, pk):
+        srz_data = self.serializer_class(data=request.data)
+        srz_data.is_valid(raise_exception=True)
+        roles = srz_data.validated_data
+
+        keycloak = KeyCloakConfidentialClient()
+
+        try:
+            response = keycloak.send_request(
+                keycloak.KeyCloakRequestTypeChoices.ASSIGN_ROLE_GROUP,
+                keycloak.KeyCloakRequestTypeChoices,
+                keycloak.KeyCloakRequestMethodChoices.POST,
+                keycloak.KeyCloakPanelTypeChoices.ADMIN,
+                group_id=pk,
+                roles=roles
+            )
+
+            return Response(response,status.HTTP_200_OK)
+
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)

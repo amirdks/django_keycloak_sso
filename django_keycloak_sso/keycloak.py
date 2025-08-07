@@ -553,6 +553,35 @@ class KeyCloakConfidentialClient(KeyCloakBaseManager):
         )
         return response_data
 
+    # assigning role to group
+    def _post_assign_role_group(self, group_id: str , roles: dict):
+        endpoint = f'/groups/{group_id}/role-mappings/clients/d6e75338-5948-471e-b608-df0db1b2b922' # TODO: give client id uuid in .env and set in KeyCloakInitializer
+        endpoint = self._build_filter_url(base_url=endpoint)
+        extra_headers = {
+            "Content-Type": "application/json"
+        }
+        extra_headers = self.set_client_access_token(extra_headers)
+
+        role_objects = roles['roles']
+
+        data = []
+        for role in role_objects:
+            role_id = role['role_id']
+            role_name = role['role_name']
+            data.append({
+                'id' : role_id,
+                'name' : role_name
+            })
+
+        response_data = self._get_request_data(
+            endpoint=endpoint,
+            request_method=self.KeyCloakRequestMethodChoices.POST,
+            extra_headers=extra_headers,
+            post_data=data,
+            is_admin=True
+        )
+        return response_data
+
     # def decode_token_v2(self, token):
     #     try:
     #         return self.keycloak_openid.decode_token(
