@@ -412,3 +412,39 @@ class CreateGroupView(APIView):
 
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RoleListRetrieveView(APIView):
+    """
+    List and Retrieve roles
+    """
+
+    @keycloak_admin_doc(
+        operation_summary="Role List and Retrieve",
+        operation_description="List and details of a client's roles",
+        responses={
+            200: {
+                'type': 'object',
+                'properties': {
+                    'detail': {'type': 'string'}
+                },
+                'example': {
+                    'detail': 'Request successful.'
+                }
+            }
+        }
+    )
+    def get(self, request , role_id=None):
+
+        keycloak = KeyCloakConfidentialClient()
+        try:
+            response = keycloak.send_request(
+                keycloak.KeyCloakRequestTypeChoices.CLIENT_ROLES,
+                keycloak.KeyCloakRequestTypeChoices,
+                keycloak.KeyCloakRequestMethodChoices.GET,
+                keycloak.KeyCloakPanelTypeChoices.ADMIN,
+                role_id=role_id
+            )
+            return Response(response,status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)

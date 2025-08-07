@@ -4,6 +4,7 @@ from .helpers import get_settings_value
 class KeyCloakInitializer:
     realm = get_settings_value('KEYCLOAK_REALM')
     client_id = get_settings_value('KEYCLOAK_CLIENT_ID')
+    client_pk = get_settings_value('KEYCLOAK_CLIENT_PK')
     client_title = get_settings_value('KEYCLOAK_CLIENT_TITLE')
     client_name = get_settings_value('KEYCLOAK_CLIENT_NAME')
     algorithms = get_settings_value('KEYCLOAK_ALGORITHMS')

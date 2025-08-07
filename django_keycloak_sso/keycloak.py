@@ -533,6 +533,26 @@ class KeyCloakConfidentialClient(KeyCloakBaseManager):
         )
         return response_data
 
+    # get to client's roles
+    def _get_client_roles(self , role_id: str = None):
+        endpoint = f'/clients/{self.client_pk}/roles'
+        if role_id:
+            endpoint = f'/roles-by-id/{role_id}'
+
+        endpoint = self._build_filter_url(base_url=endpoint)
+        extra_headers = {
+            "Content-Type": "application/json"
+        }
+        extra_headers = self.set_client_access_token(extra_headers)
+        response_data = self._get_request_data(
+            endpoint=endpoint,
+            request_method=self.KeyCloakRequestMethodChoices.GET,
+            extra_headers=extra_headers,
+            post_data=None,
+            is_admin=True
+        )
+        return response_data
+
     # def decode_token_v2(self, token):
     #     try:
     #         return self.keycloak_openid.decode_token(
