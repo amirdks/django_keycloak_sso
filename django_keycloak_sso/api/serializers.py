@@ -199,3 +199,14 @@ class SSOManyField(serializers.Field):
                 raise serializers.ValidationError(f"Invalid ID format: {item}")
 
         return data
+
+
+class GroupCreateSerializer(serializers.Serializer):
+    name = serializers.CharField()
+
+class AssignRoleGroupSerializer(serializers.Serializer):
+    role_id = serializers.CharField()
+    role_name = serializers.CharField()
+
+class AssignRoleGroupManySerializer(serializers.Serializer):
+    roles = AssignRoleGroupSerializer(many=True)

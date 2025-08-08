@@ -93,7 +93,7 @@ class KeyCloakBaseManager(KeyCloakInitializer):
             *,
             endpoint: str,
             request_method: KeyCloakRequestMethodChoices,
-            post_data: dict = None,
+            post_data: list = None,
             extra_headers: dict = None,
             is_admin: bool = False
     ) -> Any:
@@ -101,37 +101,56 @@ class KeyCloakBaseManager(KeyCloakInitializer):
             url = f"{self.base_admin_url}{endpoint}"
         else:
             url = f"{self.base_panel_url}{endpoint}"
+
         try:
             response = None
+            headers = self._get_headers(extra_headers=extra_headers)
+
             if request_method == self.KeyCloakRequestMethodChoices.GET:
-                headers = self._get_headers(extra_headers=extra_headers)
                 response = requests.get(
                     url,
                     headers=headers,
-                    verify=False,
-                    # verify=get_settings_value('ENVIRONMENT') == 'prod'
-                )
-            elif request_method == self.KeyCloakRequestMethodChoices.POST:
-                response = requests.post(
-                    url,
-                    data=post_data,
-                    headers=self._get_headers(extra_headers=extra_headers),
                     verify=False
-                    # verify=get_settings_value('ENVIRONMENT') == 'prod'
                 )
+
+            elif request_method == self.KeyCloakRequestMethodChoices.POST:
+
+                content_type = headers.get('Content-Type', '').lower()
+                if 'application/json' in content_type:
+                    response = requests.post(
+                        url,
+                        json=post_data,
+                        headers=headers,
+                        verify=False
+                    )
+                else:
+                    response = requests.post(
+                        url,
+                        data=post_data,
+                        headers=headers,
+                        verify=False
+                    )
+
             if response is not None:
                 response.raise_for_status()
-                if response.status_code in (200, 204) and not response.content.strip():
-                    return {"detail": "Request successful"}
-                return response.json()
-        # TODO : fix this dumb handler
+                if response.status_code in (200, 204, 201):
+                    if not response.content or not response.content.strip():
+                        return {"detail": "Request successful"}
+                    try:
+                        return response.json()
+                    except ValueError:
+                        return {"detail": "Non-JSON response", "raw": response.text}
+
+
         except HTTPError as http_err:
-            print(f'HTTP error occurred: {http_err}')
-            print(http_err.response.content)
             if http_err.response.status_code == 404:
                 raise self.KeyCloakNotFoundException(_("Url or object was not found : 404 error"))
-            print(http_err)
-            raise self.KeyCloakException(http_err)
+            elif http_err.response.status_code == 409:
+                raise self.KeyCloakException("This group already exists.")
+            else:
+                raise self.KeyCloakException(http_err)
+
+
         except Exception as err:
             print(err)
             raise self.KeyCloakException(err)
@@ -211,6 +230,8 @@ class KeyCloakConfidentialClient(KeyCloakBaseManager):
         USERS = "USERS", _("Users")
         USER_ROLES = "USER_ROLES", _("User Roles")
         USER_GROUPS = "USER_GROUPS", _("User Groups")
+        CLIENT_ROLES = "CLIENT_ROLES", _("Client roles")
+        ASSIGN_ROLE_GROUP = "ASSIGN_ROLE_GROUP", _("Assign Role Group")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -486,6 +507,81 @@ class KeyCloakConfidentialClient(KeyCloakBaseManager):
             raise self.KeyCloakException(_("Failed to retrieve user roles from Keycloak"))
 
         return response_data
+
+
+    # for create group
+    def _post_groups(self , name: str , group_parent_id: str = None):
+        endpoint = '/groups'
+
+        if group_parent_id:
+            endpoint = f'/groups/{group_parent_id}/children'
+
+        endpoint = self._build_filter_url(base_url=endpoint)
+        extra_headers = {
+            "Content-Type": "application/json"
+        }
+        data = {
+            'name': name
+        }
+        extra_headers = self.set_client_access_token(extra_headers)
+        response_data = self._get_request_data(
+            endpoint=endpoint,
+            request_method=self.KeyCloakRequestMethodChoices.POST,
+            extra_headers=extra_headers,
+            post_data=data,
+            is_admin=True
+        )
+        return response_data
+
+    # get to client's roles
+    def _get_client_roles(self , role_id: str = None):
+        endpoint = f'/clients/{self.client_pk}/roles'
+        if role_id:
+            endpoint = f'/roles-by-id/{role_id}'
+
+        endpoint = self._build_filter_url(base_url=endpoint)
+        extra_headers = {
+            "Content-Type": "application/json"
+        }
+        extra_headers = self.set_client_access_token(extra_headers)
+        response_data = self._get_request_data(
+            endpoint=endpoint,
+            request_method=self.KeyCloakRequestMethodChoices.GET,
+            extra_headers=extra_headers,
+            post_data=None,
+            is_admin=True
+        )
+        return response_data
+
+    # assigning role to group
+    def _post_assign_role_group(self, group_id: str , roles: dict):
+        endpoint = f'/groups/{group_id}/role-mappings/clients/d6e75338-5948-471e-b608-df0db1b2b922' # TODO: give client id uuid in .env and set in KeyCloakInitializer
+        endpoint = self._build_filter_url(base_url=endpoint)
+        extra_headers = {
+            "Content-Type": "application/json"
+        }
+        extra_headers = self.set_client_access_token(extra_headers)
+
+        role_objects = roles['roles']
+
+        data = []
+        for role in role_objects:
+            role_id = role['role_id']
+            role_name = role['role_name']
+            data.append({
+                'id' : role_id,
+                'name' : role_name
+            })
+
+        response_data = self._get_request_data(
+            endpoint=endpoint,
+            request_method=self.KeyCloakRequestMethodChoices.POST,
+            extra_headers=extra_headers,
+            post_data=data,
+            is_admin=True
+        )
+        return response_data
+
     # def decode_token_v2(self, token):
     #     try:
     #         return self.keycloak_openid.decode_token(
