@@ -210,3 +210,7 @@ class AssignRoleGroupSerializer(serializers.Serializer):
 
 class AssignRoleGroupManySerializer(serializers.Serializer):
     roles = AssignRoleGroupSerializer(many=True)
+
+class UserJoinGroupSerializer(serializers.Serializer):
+    user_id = serializers.CharField()
+    group_id = serializers.CharField()

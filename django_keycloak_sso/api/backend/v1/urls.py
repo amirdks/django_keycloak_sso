@@ -16,6 +16,7 @@ sso_urls = [
     path('groups/<str:pk>/roles-assign/',views.AssignRoleGroupView.as_view(),name='group_assign_roles_view'),
     path("users/", views.UserListRetrieveView.as_view(), name="user_retrieve_view"),
     path("users/<str:pk>/", views.UserListRetrieveView.as_view(), name="user_list_view"),
+    path('users/group/join/',views.UserJoinGroupView.as_view(),name='user_join_group_view'),
     path('roles/',views.RoleListRetrieveView.as_view(),name='role_list_view'),
     path('roles/<str:role_id>/',views.RoleListRetrieveView.as_view(),name='role_retrieve_view'),
     # path("roles/", views.KeyCloakRefreshView.as_view(), name="keycloak_refresh_view"),

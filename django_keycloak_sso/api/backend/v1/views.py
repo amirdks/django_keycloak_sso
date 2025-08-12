@@ -9,7 +9,11 @@ from django_keycloak_sso.documentation import keycloak_login_doc, keycloak_api_d
 from django_keycloak_sso.keycloak import KeyCloakConfidentialClient
 from django_keycloak_sso.paginations import DefaultPagination
 from django_keycloak_sso.sso.authentication import CustomUser
-from ...serializers import KeyCloakSetCookieSerializer,GroupCreateSerializer,AssignRoleGroupManySerializer
+from ...serializers import (KeyCloakSetCookieSerializer,
+                            GroupCreateSerializer,
+                            AssignRoleGroupManySerializer,
+                            UserJoinGroupSerializer
+                            )
 
 
 class KeyCloakLoginView(APIView):
@@ -492,3 +496,45 @@ class AssignRoleGroupView(APIView):
 
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class UserJoinGroupView(APIView):
+    serializer_class = UserJoinGroupSerializer
+
+    @keycloak_admin_doc(
+        operation_summary="User join to group",
+        operation_description="User join to group",
+        request_body = UserJoinGroupSerializer,
+        responses={
+            204: {
+                'type': 'object',
+                'properties': {
+                    'detail': {'type': 'string'}
+                },
+                'example': {
+                    'detail': 'Request successful.'
+                }
+            }
+        }
+    )
+    def post(self, request):
+        srz_data = self.serializer_class(data=request.data)
+        srz_data.is_valid(raise_exception=True)
+
+        user_id = srz_data.validated_data.get('user_id')
+        group_id = srz_data.validated_data.get('group_id')
+
+        keycloak = KeyCloakConfidentialClient()
+
+        try:
+            response = keycloak.send_request(
+                keycloak.KeyCloakRequestTypeChoices.USER_JOIN_GROUP,
+                keycloak.KeyCloakRequestTypeChoices,
+                keycloak.KeyCloakRequestMethodChoices.PUT,
+                keycloak.KeyCloakPanelTypeChoices.ADMIN,
+                user_id=user_id,
+                group_id=group_id
+            )
+
+            return Response(response)
+        except Exception as e:
+            return Response({'detail': str(e)}, status.HTTP_400_BAD_REQUEST)

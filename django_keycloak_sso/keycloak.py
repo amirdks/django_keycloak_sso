@@ -49,6 +49,7 @@ class KeyCloakBaseManager(KeyCloakInitializer):
     class KeyCloakRequestMethodChoices(TextChoices):
         GET = "GET", _("Get")
         POST = "POST", _("Post")
+        PUT = "PUT", _("Put")
 
     class KeyCloakSaveTokenMethodChoices(TextChoices):
         COOKIE = "COOKIE", _("Cookie")
@@ -125,6 +126,24 @@ class KeyCloakBaseManager(KeyCloakInitializer):
                     )
                 else:
                     response = requests.post(
+                        url,
+                        data=post_data,
+                        headers=headers,
+                        verify=False
+                    )
+
+            elif request_method == self.KeyCloakRequestMethodChoices.PUT:
+
+                content_type = headers.get('Content-Type', '').lower()
+                if 'application/json' in content_type:
+                    response = requests.put(
+                        url,
+                        json=post_data,
+                        headers=headers,
+                        verify=False
+                    )
+                else:
+                    response = requests.put(
                         url,
                         data=post_data,
                         headers=headers,
@@ -232,6 +251,7 @@ class KeyCloakConfidentialClient(KeyCloakBaseManager):
         USER_GROUPS = "USER_GROUPS", _("User Groups")
         CLIENT_ROLES = "CLIENT_ROLES", _("Client roles")
         ASSIGN_ROLE_GROUP = "ASSIGN_ROLE_GROUP", _("Assign Role Group")
+        USER_JOIN_GROUP = "USER_JOIN_GROUP", _("User Join Group")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -581,6 +601,25 @@ class KeyCloakConfidentialClient(KeyCloakBaseManager):
             is_admin=True
         )
         return response_data
+
+    def _put_user_join_group(self,user_id,group_id):
+        endpoint = f'/users/{user_id}/groups/{group_id}'
+        endpoint = self._build_filter_url(base_url=endpoint)
+        extra_headers = {
+            "Content-Type": "application/json"
+        }
+        extra_headers = self.set_client_access_token(extra_headers)
+
+        response_data = self._get_request_data(
+            endpoint=endpoint,
+            request_method=self.KeyCloakRequestMethodChoices.PUT,
+            extra_headers=extra_headers,
+            post_data=None,
+            is_admin=True
+        )
+        return response_data
+
+
 
     # def decode_token_v2(self, token):
     #     try:

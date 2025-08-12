@@ -49,10 +49,9 @@ def check_user_permission_access(
     parsed_user_groups = []
     for group_path in user.groups:
         parts = group_path.strip("/").split("/")
-        if len(parts) == 2:
-            group, role = parts
-            role = role[:-1] if role.endswith('s') else role
-            parsed_user_groups.append((group.lower(), role.lower()))
+        for part in parts:
+            parsed_user_groups.append((part.lower(), None))
+
     # Rule 1: user must have all role_titles in either roles or client_roles
     for required_role in role_titles:
         require_required_role = True
