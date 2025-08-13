@@ -16,3 +16,4 @@ class KeyCloakInitializer:
     issuer_prefix = get_settings_value('KEYCLOAK_ISSUER_PREFIX')
     issuer = f'{issuer_prefix}/realms/{realm}'
     client_secret = get_settings_value('KEYCLOAK_CLIENT_SECRET')
+    admin_group = get_settings_value('ADMIN_GROUP')
