@@ -19,6 +19,7 @@ sso_urls = [
     path('users/group/join/',views.UserJoinGroupView.as_view(),name='user_join_group_view'),
     path('roles/',views.RoleListRetrieveView.as_view(),name='role_list_view'),
     path('roles/<str:role_id>/',views.RoleListRetrieveView.as_view(),name='role_retrieve_view'),
+    path('token/',views.FrontAPIView.as_view(),name='give_token_view')
     # path("roles/", views.KeyCloakRefreshView.as_view(), name="keycloak_refresh_view"),
 ]
 

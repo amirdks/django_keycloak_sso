@@ -202,15 +202,24 @@ class SSOManyField(serializers.Field):
 
 
 class GroupCreateSerializer(serializers.Serializer):
+    """ for creating group """
     name = serializers.CharField()
 
 class AssignRoleGroupSerializer(serializers.Serializer):
+    """ assigning role to group one object """
     role_id = serializers.CharField()
     role_name = serializers.CharField()
 
 class AssignRoleGroupManySerializer(serializers.Serializer):
+    """ assigning role to group many object """
     roles = AssignRoleGroupSerializer(many=True)
 
 class UserJoinGroupSerializer(serializers.Serializer):
+    """ joining user to group """
     user_id = serializers.CharField()
     group_id = serializers.CharField()
+
+class TokenRequestSerializer(serializers.Serializer):
+    """ for create token """
+    username = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)

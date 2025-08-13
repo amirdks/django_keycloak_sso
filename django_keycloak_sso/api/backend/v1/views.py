@@ -12,7 +12,8 @@ from django_keycloak_sso.sso.authentication import CustomUser
 from ...serializers import (KeyCloakSetCookieSerializer,
                             GroupCreateSerializer,
                             AssignRoleGroupManySerializer,
-                            UserJoinGroupSerializer
+                            UserJoinGroupSerializer,
+                            TokenRequestSerializer
                             )
 
 
@@ -538,3 +539,41 @@ class UserJoinGroupView(APIView):
             return Response(response)
         except Exception as e:
             return Response({'detail': str(e)}, status.HTTP_400_BAD_REQUEST)
+
+
+class FrontAPIView(APIView):
+
+
+    @keycloak_api_doc(
+        operation_summary="Create Token",
+        operation_description="Create token for given user",
+        request_body = TokenRequestSerializer,
+        responses={
+            204: {
+                'type': 'object',
+                'properties': {
+                    'detail': {'type': 'string'}
+                },
+                'example': "string"
+            }
+        }
+    )
+    def post(self, request):
+        keycloak_klass = KeyCloakConfidentialClient()
+        username = request.data.get('username')
+        password = request.data.get('password')
+        if not username or not password:
+            return Response({'error': 'Username and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            access_key = keycloak_klass.send_request(
+                keycloak_klass.KeyCloakRequestTypeChoices.PASSWORD_ACCESS_TOKEN,
+                keycloak_klass.KeyCloakRequestTypeChoices,
+                keycloak_klass.KeyCloakRequestMethodChoices.POST,
+                keycloak_klass.KeyCloakPanelTypeChoices.USER,
+                username=username,
+                password=password,
+            )
+        except keycloak_klass.KeyCloakException as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(access_key, status=status.HTTP_200_OK)
+
