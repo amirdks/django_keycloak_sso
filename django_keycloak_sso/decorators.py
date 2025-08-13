@@ -52,6 +52,31 @@ def require_group_roles(*group_roles):
     return check_permission_decorator(group_roles=list(group_roles))
 
 
+def require_any_group(*group_titles):
+    """
+    Decorator to check if user has at least one of the given groups (OR logic)
+    """
+    group_titles = [r for r in group_titles if r]
+
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(view, request, *args, **kwargs):
+            user = getattr(request, 'user', None)
+            if not user or not user.is_authenticated:
+                raise PermissionDenied(_("Authentication required"))
+
+            user_groups =   getattr(user, 'groups', [])
+
+            if not any(group.lower() in user_groups for group in group_titles):
+                raise PermissionDenied(_("You are not allowed to access this API"))
+
+            return view_func(view, request, *args, **kwargs)
+
+        return _wrapped_view
+
+    return decorator
+
+
 def require_any_role(*role_titles):
     """
     Decorator to check if user has at least one of the given roles (OR logic)

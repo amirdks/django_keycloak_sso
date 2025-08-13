@@ -84,14 +84,17 @@ class GroupAccess(KeyCloakInitializer):
     def require_all_groups(self, user , groups_name: list):
 
         groups_list = user.groups
-        if self.admin_group not in groups_list and not all(item in groups_list for item in groups_name):
+        if not any(admin in groups_list for admin in self.admin_groups) and not all(item in groups_list for item in groups_name):
             raise PermissionDenied('You are not allowed to access this API')
         return True
 
-    def require_any_groups(self, user , groups_names: list):
-
+    def require_any_groups(self, user, groups_names: list):
         groups_list = user.groups
-        if not (self.admin_group in groups_list or any(item in groups_list for item in groups_names)):
+
+        if not (
+                any(admin in groups_list for admin in self.admin_groups)
+                or any(item in groups_list for item in groups_names)
+        ):
             raise PermissionDenied('You are not allowed to access this API')
         return True
 
