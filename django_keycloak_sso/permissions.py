@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from django_keycloak_sso.sso.utils import check_user_permission_access
 from django_keycloak_sso.keycloak import KeyCloakConfidentialClient
+from django_keycloak_sso.initializer import KeyCloakInitializer
 
 
 class IsManagerAccess(IsAuthenticated):
@@ -73,3 +74,24 @@ class IsAuthenticatedAccess(IsAuthenticated):
             raise PermissionDenied(_("You are not allowed to access this API"))
 
         return True
+
+class GroupAccess(KeyCloakInitializer):
+    """
+    You can check if a user has the allowed group by sending the name of the desired group and
+    request.user and setting the admin group in .env.
+    """
+
+    def require_all_groups(self, user , groups_name: list):
+
+        groups_list = user.groups
+        if self.admin_group not in groups_list and not all(item in groups_list for item in groups_name):
+            raise PermissionDenied('You are not allowed to access this API')
+        return True
+
+    def require_any_groups(self, user , groups_names: list):
+
+        groups_list = user.groups
+        if not (self.admin_group in groups_list or any(item in groups_list for item in groups_names)):
+            raise PermissionDenied('You are not allowed to access this API')
+        return True
+

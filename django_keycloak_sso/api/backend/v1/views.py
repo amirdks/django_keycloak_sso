@@ -9,7 +9,12 @@ from django_keycloak_sso.documentation import keycloak_login_doc, keycloak_api_d
 from django_keycloak_sso.keycloak import KeyCloakConfidentialClient
 from django_keycloak_sso.paginations import DefaultPagination
 from django_keycloak_sso.sso.authentication import CustomUser
-from ...serializers import KeyCloakSetCookieSerializer,GroupCreateSerializer,AssignRoleGroupManySerializer
+from ...serializers import (KeyCloakSetCookieSerializer,
+                            GroupCreateSerializer,
+                            AssignRoleGroupManySerializer,
+                            UserJoinGroupSerializer,
+                            TokenRequestSerializer
+                            )
 
 
 class KeyCloakLoginView(APIView):
@@ -492,3 +497,83 @@ class AssignRoleGroupView(APIView):
 
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class UserJoinGroupView(APIView):
+    serializer_class = UserJoinGroupSerializer
+
+    @keycloak_admin_doc(
+        operation_summary="User join to group",
+        operation_description="User join to group",
+        request_body = UserJoinGroupSerializer,
+        responses={
+            204: {
+                'type': 'object',
+                'properties': {
+                    'detail': {'type': 'string'}
+                },
+                'example': {
+                    'detail': 'Request successful.'
+                }
+            }
+        }
+    )
+    def post(self, request):
+        srz_data = self.serializer_class(data=request.data)
+        srz_data.is_valid(raise_exception=True)
+
+        user_id = srz_data.validated_data.get('user_id')
+        group_id = srz_data.validated_data.get('group_id')
+
+        keycloak = KeyCloakConfidentialClient()
+
+        try:
+            response = keycloak.send_request(
+                keycloak.KeyCloakRequestTypeChoices.USER_JOIN_GROUP,
+                keycloak.KeyCloakRequestTypeChoices,
+                keycloak.KeyCloakRequestMethodChoices.PUT,
+                keycloak.KeyCloakPanelTypeChoices.ADMIN,
+                user_id=user_id,
+                group_id=group_id
+            )
+
+            return Response(response)
+        except Exception as e:
+            return Response({'detail': str(e)}, status.HTTP_400_BAD_REQUEST)
+
+
+class FrontAPIView(APIView):
+
+
+    @keycloak_api_doc(
+        operation_summary="Create Token",
+        operation_description="Create token for given user",
+        request_body = TokenRequestSerializer,
+        responses={
+            204: {
+                'type': 'object',
+                'properties': {
+                    'detail': {'type': 'string'}
+                },
+                'example': "string"
+            }
+        }
+    )
+    def post(self, request):
+        keycloak_klass = KeyCloakConfidentialClient()
+        username = request.data.get('username')
+        password = request.data.get('password')
+        if not username or not password:
+            return Response({'error': 'Username and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            access_key = keycloak_klass.send_request(
+                keycloak_klass.KeyCloakRequestTypeChoices.PASSWORD_ACCESS_TOKEN,
+                keycloak_klass.KeyCloakRequestTypeChoices,
+                keycloak_klass.KeyCloakRequestMethodChoices.POST,
+                keycloak_klass.KeyCloakPanelTypeChoices.USER,
+                username=username,
+                password=password,
+            )
+        except keycloak_klass.KeyCloakException as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(access_key, status=status.HTTP_200_OK)
+
