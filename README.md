@@ -121,7 +121,7 @@ from django_keycloak_sso.decorators import (
     require_roles,
     require_any_role,
     require_groups,
-    require_any_groups,
+    require_any_group,
     require_group_roles,
     require_all_permissions
 )
