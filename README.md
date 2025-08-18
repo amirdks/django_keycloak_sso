@@ -7,6 +7,7 @@ KEYCLOAK_SERVER_URL = config('KEYCLOAK_SERVER_URL', default="http://localhost:80
 KEYCLOAK_ISSUER_PREFIX = config('KEYCLOAK_ISSUER_PREFIX', default="http://localhost:8080", cast=str)
 KEYCLOAK_REALM = config('KEYCLOAK_REALM', cast=str)
 KEYCLOAK_CLIENT_ID = config('KEYCLOAK_CLIENT_ID', cast=str)
+KEYCLOAK_CLIENT_PK = config('KEYCLOAK_CLIENT_PK', cast=str)  # for when we need to read client roles
 KEYCLOAK_CLIENT_TITLE = config('KEYCLOAK_CLIENT_TITLE', cast=str)
 KEYCLOAK_CLIENT_NAME = config('KEYCLOAK_CLIENT_NAME', cast=str)
 KEYCLOAK_CLIENT_SECRET = config('KEYCLOAK_CLIENT_SECRET', cast=str)
@@ -19,6 +20,8 @@ KEYCLOAK_OAUTH_REDIRECT_URI = config(
 KEYCLOAK_DEFAULT_ADMIN_PANEL_PERMISSION_CLASSES = [
     'django_keycloak_sso.permissions.IsAuthenticatedAccess'
 ] # default permission to access keycloak admin data endpoints
+
+ADMIN_GROUPS = config('ADMIN_GROUPS', cast=list) # for when using from GroupAccess
 ```
 
 examples:
@@ -28,11 +31,13 @@ KEYCLOAK_SERVER_URL=https://sso.domain # if using in dokcer : https://<keycloak_
 KEYCLOAK_ISSUER_PREFIX=https://sso.domain
 KEYCLOAK_REALM=main
 KEYCLOAK_CLIENT_ID=ecommerce-back
+KEYCLOAK_CLIENT_PK=<client_primary_key>
 KEYCLOAK_CLIENT_SECRET=<client_secret_key>
 KEYCLOAK_OAUTH_REDIRECT_URI=http://127.0.0.1:8000/auth/callback/ # for login in ssr sites
 KEYCLOAK_CLIENT_NAME=ecommerce
 KEYCLOAK_CLIENT_TITLE=ecommerce-back
 KEYCLOAK_ALGORITHMS=RS256
+ADMIN_GROUPS=ecommerce-back-admin,ecommerce-back-admin2
 ```
 
 ---
@@ -114,7 +119,9 @@ These decorators provide fine-grained access control for your views using Keyclo
 ```python
 from django_keycloak_sso.decorators import (
     require_roles,
+    require_any_role,
     require_groups,
+    require_any_groups,
     require_group_roles,
     require_all_permissions
 )
@@ -129,11 +136,29 @@ def view_func(request):
     pass
 ```
 
+**@require_any_role(\*role_titles)**
+
+Checks whether the user has one of the specified realm or client roles.
+```python
+@require_any_roles('superuser', 'admin')
+def view_func(request):
+    pass
+```
+
 **@require_groups(\*group_titles)**
 
 Checks if the user is a member of all specified group names.
 ```python
-@require_groups('group_1')
+@require_groups('group_1','group_2')
+def view_func(request):
+    pass
+```
+
+**@require_any_group(\*group_titles)**
+
+Checks whether the user is a member of one of the specified group names.
+```python
+@require_any_group('group_1','group_2')
 def view_func(request):
     pass
 ```
@@ -163,6 +188,28 @@ Combined decorator that allows you to check all types of permissions in one call
 )
 def view_func(request):
     pass
+```
+
+**GroupAccess()**
+
+When the desired group is dynamic, you can check whether the user belongs to one or all of the groups by passing the request.user and group_names values to the methods of this class.
+
+```python
+from django_keycloak_sso.permissions import GroupAccess
+class TestAPIView(APIView):
+    access = GroupAccess()
+
+    def get(self,request):
+        object_id = self.object.id
+        self.access.require_all_groups(request.user,[f'group_1_{object_id}','group_2_{object_id}'])
+
+        ...
+
+    def post(self,request)
+        object_id = self.object.id
+        self.access.require_any_groups(request.user,[f'group_1_{object_id}','group_2_{object_id}'])
+
+        ...
 ```
 
 #### Stacking Decorators
