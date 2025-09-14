@@ -13,13 +13,13 @@ class KeyCloakSetCookieSerializer(serializers.Serializer):
 class GroupSerializer(serializers.Serializer):
     id = serializers.CharField()
     title = serializers.SerializerMethodField()
+    subGroups = serializers.ListField(child=serializers.DictField(), required=False)
 
     def get_title(self, obj):
         if hasattr(obj, 'name'):
             return getattr(obj, 'name')
-        else:
-            if obj and obj.get('name'):
-                return obj['name']
+        elif obj and obj.get('name'):
+            return obj['name']
         return None
 
     def to_representation(self, instance):

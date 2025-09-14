@@ -259,7 +259,6 @@ class GroupListRetrieveView(BaseKeycloakAdminView):
                 }
             }
         },
-        # Add query parameters documentation
         parameters=[
             {
                 'name': 'own',
@@ -289,26 +288,126 @@ class GroupListRetrieveView(BaseKeycloakAdminView):
                 detail_pk=pk,
             )
 
+
+            if response is None:
+                response = []
+            elif not isinstance(response, list):
+                response = [response]
+
             if request.query_params.get("own") == "1" and not pk:
                 user_group_names = [group for group in request.user.groups_parent]
                 response = [group for group in response if group.get("name") in user_group_names]
-                group_type = request.query_params.get("type")
 
+                group_type = request.query_params.get("type")
                 if group_type:
                     group_with_type = [
-                        user_group for user_group in request.user.groups_dict_list if
-                        user_group.get("role") == group_type
+                        user_group for user_group in request.user.groups_dict_list
+                        if user_group.get("role") == group_type
                     ]
                     group_with_type_name_list = [group.get("title") for group in group_with_type]
                     response = [group for group in response if group.get("name") in group_with_type_name_list]
 
-            paginator = self.pagination_class()
-            paginated_queryset = paginator.paginate_queryset(response, request)
-            serializer = module_serializers.GroupSerializer(paginated_queryset, many=True)
-            return paginator.get_paginated_response(serializer.data)
+            serializer = module_serializers.GroupSerializer(response, many=True)
+
+            if isinstance(response, list) and len(response) > 0:
+                paginator = self.pagination_class()
+                paginated_queryset = paginator.paginate_queryset(response, request)
+                serializer = module_serializers.GroupSerializer(paginated_queryset, many=True)
+                return paginator.get_paginated_response(serializer.data)
+
+            return Response(serializer.data)
 
         except keycloak_klass.KeyCloakNotFoundException:
             return Response({"detail": "Requested group data was not found"}, status=404)
+
+
+def find_group_id(groups, search_name):
+    """
+    get group ID
+    """
+    for group in groups:
+        if group.get("name") == search_name:
+            return group.get("id")
+        sub_groups = group.get("subGroups") or []
+        if sub_groups:
+            result = find_group_id(sub_groups, search_name)
+            if result:
+                return result
+    return None
+
+
+class FindGroupIDView(APIView):
+    """
+    Get detail group by group name
+    """
+
+    def find_group_detailing(self , detailing_type , group_name):
+        keycloak = KeyCloakConfidentialClient()
+
+        extra_params = {'extra_query_params': {'search': group_name}}
+
+        try:
+            groups = keycloak.send_request(
+                keycloak.KeyCloakRequestTypeChoices.GROUPS,
+                keycloak.KeyCloakRequestTypeChoices,
+                keycloak.KeyCloakRequestMethodChoices.GET,
+                keycloak.KeyCloakPanelTypeChoices.ADMIN,
+                **extra_params
+            )
+
+            if detailing_type == 'id':
+                group_id = find_group_id(groups, group_name)
+                response = {"id": group_id}
+            else:
+                response = groups
+
+            return {'response':response,
+                    'status': 200
+                    }
+
+        except Exception as e:
+
+            return {"detail": "Group name not found",
+                    "error": str(e),
+                    "status": 404
+                    }
+
+
+    @keycloak_admin_doc(
+        operation_summary="Group Retrieve",
+        operation_description="Group Retrieve from keycloak by group name.",
+
+        # Add query parameters documentation
+        parameters=[
+            {
+                'name': 'detailing_type',
+                'in': 'query',
+                'description': 'Filter to user\'s own groups (boolean flag)',
+                'required': True,
+                'schema': {
+                    'type': 'string',
+                    'enum':['id','detail']
+                },
+            }
+        ]
+    )
+    def get(self, request, *args, **kwargs):
+
+        request_param = request.query_params.get('detailing_type')
+
+        group_name = kwargs.get('group_name')
+
+
+        result = self.find_group_detailing(request_param,group_name)
+
+        if result.get('status') == 200:
+            return Response(result.get('response'),status.HTTP_200_OK)
+
+        else:
+            return Response(
+                {"detail": result.get('detail'), "error": result.get('error')},
+                status=status.HTTP_404_NOT_FOUND)
+
 
 
 class UserListRetrieveView(BaseKeycloakAdminView):
@@ -378,7 +477,7 @@ class CreateGroupView(APIView):
                     'detail': {'type': 'string'}
                 },
                 'example': {
-                    'detail': 'Created station groups successfully',
+                    'detail': 'Created group successfully',
                     'response': 'object'
                 }
             }
@@ -412,11 +511,58 @@ class CreateGroupView(APIView):
                 name=group_name,
                 group_parent_id=group_parent_id
             )
-            return Response({'detail':'Created station groups successfully',
+            return Response({'detail':'Created group successfully',
                              'response':response},status.HTTP_201_CREATED)
 
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class DeleteGroupView(APIView):
+    """
+    deleting group by group id
+    """
+
+    def deleting_group(self , group_id):
+        keycloak = KeyCloakConfidentialClient()
+
+        try:
+            response = keycloak.send_request(
+                keycloak.KeyCloakRequestTypeChoices.GROUPS,
+                keycloak.KeyCloakRequestTypeChoices,
+                keycloak.KeyCloakRequestMethodChoices.DELETE,
+                keycloak.KeyCloakPanelTypeChoices.ADMIN,
+                group_id=group_id
+            )
+            return {'detail':'Deleted group successfully',
+                    'response':response,
+                    'status':200
+                    }
+
+        except Exception as e:
+            return {"detail": str(e),'status': 404}
+
+    @keycloak_admin_doc(
+        operation_summary="Create group",
+        operation_description='Create a group. '
+                               'Optional: You can create a group '
+                              'in that subcategory by passing the group ID in the parameter',
+        responses={
+            204: {
+                'type': 'object',
+                'properties': {
+                    'detail': {'type': 'string'}
+                },
+                'example': {
+                    'detail': 'Deleting group by Group ID.',
+                    'response': 'object'
+                }
+            }
+        }
+    )
+    def delete(self,request, *args , **kwargs):
+        group_id = kwargs.get('group_id')
+        result = self.deleting_group(group_id)
+        return Response({'detail':result.get('detail')},result.get('status'))
 
 
 class RoleListRetrieveView(APIView):

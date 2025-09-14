@@ -135,17 +135,26 @@ class APIDocumentation:
         if HAS_SPECTACULAR:
             normalized = []
             for param in parameters:
-                if isinstance(param, dict):
-                    normalized.append(OpenApiParameter(
-                        name=param.get("name"),
-                        type=param.get("type", OpenApiTypes.STR),
-                        location=param.get("in", OpenApiParameter.QUERY),
-                        required=param.get("required", False),
-                        description=param.get("description", "")
-                    ))
+                type_ = param.get("type") or param.get("schema", {}).get("type", "string")
+                enum_ = param.get("enum") or param.get("schema", {}).get("enum")
+
+                if type_ == "boolean":
+                    type_ = OpenApiTypes.BOOL
+                elif type_ == "integer":
+                    type_ = OpenApiTypes.INT
                 else:
-                    normalized.append(param)
+                    type_ = OpenApiTypes.STR
+
+                normalized.append(OpenApiParameter(
+                    name=param.get("name"),
+                    type=type_,
+                    location=param.get("in", OpenApiParameter.QUERY),
+                    required=param.get("required", False),
+                    description=param.get("description", ""),
+                    enum=enum_
+                ))
             return normalized
+
 
         elif HAS_YASG:
             normalized = []

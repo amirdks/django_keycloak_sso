@@ -50,6 +50,7 @@ class KeyCloakBaseManager(KeyCloakInitializer):
         GET = "GET", _("Get")
         POST = "POST", _("Post")
         PUT = "PUT", _("Put")
+        DELETE = "DELETE", _("Delete")
 
     class KeyCloakSaveTokenMethodChoices(TextChoices):
         COOKIE = "COOKIE", _("Cookie")
@@ -149,6 +150,15 @@ class KeyCloakBaseManager(KeyCloakInitializer):
                         headers=headers,
                         verify=False
                     )
+
+            elif request_method == self.KeyCloakRequestMethodChoices.DELETE:
+
+                response = requests.delete(
+                    url,
+                    data=post_data,
+                    headers=headers,
+                    verify=False
+                )
 
             if response is not None:
                 response.raise_for_status()
@@ -252,6 +262,7 @@ class KeyCloakConfidentialClient(KeyCloakBaseManager):
         CLIENT_ROLES = "CLIENT_ROLES", _("Client roles")
         ASSIGN_ROLE_GROUP = "ASSIGN_ROLE_GROUP", _("Assign Role Group")
         USER_JOIN_GROUP = "USER_JOIN_GROUP", _("User Join Group")
+        FIND_GROUP = "FIND_GROUP", _("Find Group")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -428,7 +439,7 @@ class KeyCloakConfidentialClient(KeyCloakBaseManager):
             raise self.KeyCloakException(_("Failed to retrieve data"))
         return response_data
 
-    def _get_groups(self, *args, **kwargs) -> dict:
+    def _get_groups(self , *args, **kwargs) -> dict:
         """
         Retrieves all groups from Keycloak using the Admin REST API.
         Requires a valid admin-level access token.
@@ -475,6 +486,29 @@ class KeyCloakConfidentialClient(KeyCloakBaseManager):
             raise self.KeyCloakException(_("Failed to retrieve users from Keycloak"))
 
         return response_data
+
+    def _get_find_group(self , group_name):
+        endpoint = f"/groups"
+
+        extra_query_params = {
+            'search': group_name
+        }
+
+        endpoint = self._build_filter_url(base_url=endpoint,extra_query_params=extra_query_params)
+        extra_headers = {
+            "Content-Type": "application/json"
+        }
+        extra_headers = self.set_client_access_token(extra_headers)
+        response_data = self._get_request_data(
+            endpoint=endpoint,
+            request_method=self.KeyCloakRequestMethodChoices.GET,
+            extra_headers=extra_headers,
+            post_data=None,
+            is_admin=True
+        )
+        return response_data
+
+
 
     def _get_user_roles(self, detail_pk: str, *args, **kwargs) -> dict:
         """
@@ -549,6 +583,22 @@ class KeyCloakConfidentialClient(KeyCloakBaseManager):
             request_method=self.KeyCloakRequestMethodChoices.POST,
             extra_headers=extra_headers,
             post_data=data,
+            is_admin=True
+        )
+        return response_data
+
+    def _delete_groups(self , group_id: str):
+        endpoint = f'/groups/{group_id}'
+        endpoint = self._build_filter_url(base_url=endpoint)
+        extra_headers = {
+            "Content-Type": "application/json"
+        }
+        extra_headers = self.set_client_access_token(extra_headers)
+        response_data = self._get_request_data(
+            endpoint=endpoint,
+            request_method=self.KeyCloakRequestMethodChoices.DELETE,
+            extra_headers=extra_headers,
+            post_data=None,
             is_admin=True
         )
         return response_data
