@@ -382,7 +382,7 @@ class FindGroupIDView(APIView):
             {
                 'name': 'detailing_type',
                 'in': 'query',
-                'description': 'Filter to user\'s own groups (boolean flag)',
+                'description': 'How to display group information',
                 'required': True,
                 'schema': {
                     'type': 'string',
@@ -533,7 +533,7 @@ class DeleteGroupView(APIView):
                 keycloak.KeyCloakPanelTypeChoices.ADMIN,
                 group_id=group_id
             )
-            return {'detail':'Deleted group successfully',
+            return {'detail':'Group successfully deleted.',
                     'response':response,
                     'status':200
                     }
@@ -542,18 +542,16 @@ class DeleteGroupView(APIView):
             return {"detail": str(e),'status': 404}
 
     @keycloak_admin_doc(
-        operation_summary="Create group",
-        operation_description='Create a group. '
-                               'Optional: You can create a group '
-                              'in that subcategory by passing the group ID in the parameter',
+        operation_summary="Delete group",
+        operation_description='Deleting group by Group ID.',
         responses={
-            204: {
+            200: {
                 'type': 'object',
                 'properties': {
                     'detail': {'type': 'string'}
                 },
                 'example': {
-                    'detail': 'Deleting group by Group ID.',
+                    'detail': 'Group successfully deleted.',
                     'response': 'object'
                 }
             }
